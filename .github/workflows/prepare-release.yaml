@@ -25,3 +25,5 @@ jobs:
         with:
           # https://github.com/googleapis/release-please/blob/main/src/changelog-notes.ts#L42
           command: manifest
+          # This is required to avoid `release-please failed: API rate limit exceeded for installation ID XYZ`
+          token: ${{ secrets.GITHUB_TOKEN }}
