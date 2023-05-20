@@ -11,7 +11,8 @@
       "include-v-in-tag": true,
       "extra-files": [
         "gradle.properties",
-        "docs/mkdocs.yaml"
+        "docs/mkdocs.yaml",
+        "docs/mkdocs.yml"
       ]
     }
   },
