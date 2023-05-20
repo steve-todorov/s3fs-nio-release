@@ -42,6 +42,13 @@ jobs:
             let commit_message = (split.join('\n') + "\n\nCo-authored-by: " + commits[0].author.name + " <" + commits[0].author.email + ">").trim();
             console.log("Squash title: " + commit_title);
             console.log("Squash message: " + commit_message);
+            
+            const isSnapshotPr = commit_raw_title.includes("chore(snapshot): Prepare for")
+            if(!isSnapshotPr) {
+              console.error("/merge-snapshot is supposed to be executed only on pull requests updating the version to snapshot!")
+              process.exit(1)
+            }
+
             await github.rest.pulls.merge({
               owner: context.repo.owner,
               repo: context.repo.repo,
