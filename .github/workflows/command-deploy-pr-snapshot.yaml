@@ -1,0 +1,56 @@
+on:
+  repository_dispatch:
+    types: [ merge-release-command ]
+
+name: Deploy PR snapshot
+run-name: Deploy PR-${{ github.event.client_payload.github.payload.issue_number }}-SNAPSHOT
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: print
+        run: |
+          echo ${{ github.event.client_payload.github.head_ref }}
+          echo PR-${{ github.event.client_payload.github.payload.issue_number }}-SNAPSHOT
+          exit 1
+       
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.client_payload.github.head_ref }}
+
+      - name: Setup Java
+        if: ${{ true == false }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: 11
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        if: ${{ true == false }}
+        uses: gradle/gradle-build-action@v2
+        with:
+          # The Gradle wrapper's version (already the default, putting it here to clarity)
+          gradle-version: wrapper
+          # Removing unused files from Gradle User Home before saving to cache (i.e. older versions of gradle)
+          gradle-home-cache-cleanup: true
+          # Cache downloaded JDKs in addition to the default directories.
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            jdks
+
+      - name: Setup key
+        uses: crazy-max/ghaction-import-gpg@v5
+        if: ${{ fromJSON(steps.deploy_check.outputs.result).is_deployable == 'true' }}
+        with:
+          gpg_private_key: ${{ secrets.GPG_KEY }}
+          fingerprint: ${{ secrets.GPG_KEY_ID }}
+          passphrase: ${{ secrets.GPG_PASS }}
+          trust_level: 5
+
+      - name: Build and deploy snapshot
+        if: ${{ true == false }}
+        run: ./gradlew build publish --warn --stacktrace --version=PR-${{ github.event.client_payload.github.payload.issue_number }}-SNAPSHOT
