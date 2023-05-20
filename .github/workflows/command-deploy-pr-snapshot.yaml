@@ -1,0 +1,40 @@
+on:
+  repository_dispatch:
+    types: [ deploy-pr-command ]
+
+name: command-deploy-pr
+run-name: Deploying PR-${{ github.event.client_payload.github.payload.issue.number }}-SNAPSHOT
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.client_payload.pull_request.head.sha }}
+
+      - name: Setup Java
+        if: ${{ true == false }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: 11
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          # The Gradle wrapper's version (already the default, putting it here to clarity)
+          gradle-version: wrapper
+          # Removing unused files from Gradle User Home before saving to cache (i.e. older versions of gradle)
+          gradle-home-cache-cleanup: true
+          # Cache downloaded JDKs in addition to the default directories.
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            jdks
+
+      - name: Build and deploy snapshot
+        if: ${{ true == false }}
+        run: ./gradlew build publish --warn --stacktrace --version=PR-${{ github.event.client_payload.github.payload.issue.number }}-SNAPSHOT
