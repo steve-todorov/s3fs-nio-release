@@ -13,6 +13,12 @@ on:
       - 'docs/**'
       - '*.md'
       - '**/*.md'
+      - '.github/workflows/bump*.yaml'
+      - '.github/workflows/codeql*.yaml'
+      - '.github/workflows/command-dispatcher.yaml'
+      - '.github/workflows/deploy-tag.yaml'
+      - '.github/workflows/merge-*-command.yaml'
+      - '.github/workflows/prepare-release.yaml'
   workflow_dispatch:
 
 # Currently you cannot use ${{ env.IS_FORK }} for some reason, which is why you might need to copy-paste some of these.
