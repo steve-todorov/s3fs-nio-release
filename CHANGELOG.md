@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.0.3](https://github.com/steve-todorov/s3fs-nio-release/compare/v1.0.3-SNAPSHOT...v1.0.3) (2023-06-15)
+
+
+### Features
+
+* Allow configuring cacheControl via s3fs.request.header.cache-control flag ([#711](https://github.com/steve-todorov/s3fs-nio-release/issues/711)) ([f1cb117](https://github.com/steve-todorov/s3fs-nio-release/commit/f1cb1170a824b879228eda3fb1cdfbf5d322b8d2))
+
+
+### Miscellaneous
+
+* **snapshot:** Prepare for v1.0.0 ([#705](https://github.com/steve-todorov/s3fs-nio-release/issues/705)) ([6b5da67](https://github.com/steve-todorov/s3fs-nio-release/commit/6b5da67b00007289a9b0cae33e6f7ef0cc2aff1a))
+* **snapshot:** Prepare for v1.0.1 ([#709](https://github.com/steve-todorov/s3fs-nio-release/issues/709)) ([97ce1fe](https://github.com/steve-todorov/s3fs-nio-release/commit/97ce1fe384cce3c77d2fe05c3dad1a88d1b8c5d2))
+* **snapshot:** Prepare for v1.0.2 ([#722](https://github.com/steve-todorov/s3fs-nio-release/issues/722)) ([1a773ae](https://github.com/steve-todorov/s3fs-nio-release/commit/1a773ae98f78dc1c3af1aec1311d66e9590d0a38))
+* **snapshot:** Prepare for v1.0.3 ([#57](https://github.com/steve-todorov/s3fs-nio-release/issues/57)) ([de2e218](https://github.com/steve-todorov/s3fs-nio-release/commit/de2e21890c0fd43c46f706fc4179338c9b013d4e))
+
 ## [1.0.2](https://github.com/steve-todorov/s3fs-nio-release/compare/v1.0.2-SNAPSHOT...v1.0.2) (2023-06-15)
 
 
