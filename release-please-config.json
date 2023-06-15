@@ -1,12 +1,14 @@
 {
   "bootstrap-sha": "01471b4b5db5274f7ba5469c63548079b5d0e369",
+  "group-pull-request-title-pattern": "chore: Release v${version}",
   "packages": {
     ".": {
       "changelog-path": "CHANGELOG.md",
-      "release-type": "java",
+      "release-type": "simple",
       "bump-minor-pre-major": false,
       "bump-patch-for-minor-pre-major": true,
-      "pull-request-title-pattern": "Release v${version}",
+      "pull-request-title-pattern": "chore: Release v${version}",
+      "include-component-in-tag": false,
       "draft": false,
       "prerelease": false,
       "include-v-in-tag": true,
