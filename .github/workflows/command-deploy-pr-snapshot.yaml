@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   build-and-deploy:
+    environment: internal
     runs-on: ubuntu-latest
     steps:
 

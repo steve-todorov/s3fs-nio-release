@@ -25,6 +25,7 @@ env:
 
 jobs:
   docs:
+    environment: docs
     runs-on: ubuntu-latest
     steps:
 
