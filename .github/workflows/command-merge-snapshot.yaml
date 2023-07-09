@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   merge-snapshot:
+    environment: internal
     runs-on: ubuntu-latest
     steps:
 
