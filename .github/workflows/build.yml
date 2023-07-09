@@ -45,7 +45,9 @@ env:
 
 jobs:
   build-and-test:
-    environment: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository && 'external-collaborators' || 'internal' }}
+    environment: ${{ github.event_name == 'pull_request_target' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      'external-collaborators' || 'internal' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
