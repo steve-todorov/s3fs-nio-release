@@ -99,10 +99,11 @@ jobs:
               "is_snapshot": manifest["."].toLowerCase().includes("snapshot"),
               "matrix": "${{ matrix.os }}",
               "jdk": "${{ matrix.java }}",
-              "is_fork": "${{ env.IS_FORK }}"
+              "is_fork": "${{ env.IS_FORK }}",
+              "branch" : "${{ github.ref_name }}"
             }
 
-            const is_deployable = data.matrix == "ubuntu-latest" && data.jdk == "11" && data.is_fork == "false" && data.is_snapshot == true
+            const is_deployable = data.matrix == "ubuntu-latest" && data.jdk == "11" && data.is_fork == "false" && data.branch == "master" && data.is_snapshot == true
             
             console.log("Data: ", data);
             console.log("Is deployable: " + is_deployable);
@@ -155,7 +156,7 @@ jobs:
 
       # Publish snapshot only when on master branch, version is actually snapshot and from just one of the matrix jobs.
       - name: Publish snapshot (only on master branch)
-        if: ${{ github.ref_name == 'master' && fromJSON(steps.deploy_check.outputs.result).is_deployable == 'true' }}
+        if: ${{ fromJSON(steps.deploy_check.outputs.result).is_deployable == 'true' }}
         env:
           S3FS_PUBLISH_SONATYPE_USER: "${{ secrets.S3FS_PUBLISH_SONATYPE_USER }}"
           S3FS_PUBLISH_SONATYPE_PASS: "${{ secrets.S3FS_PUBLISH_SONATYPE_PASS }}"
