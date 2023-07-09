@@ -2,6 +2,7 @@ name: Build and test
 on:
   # Build PRs 
   pull_request_target:
+    types: [ opened, synchronize, reopened ]
     paths-ignore:
       - 'docs/**'
       - '*.md'
