@@ -42,7 +42,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Build docks
+      - name: Build docs
         working-directory: docs
         run: docker-compose run build
 
