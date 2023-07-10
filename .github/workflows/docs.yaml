@@ -41,35 +41,3 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: Build docs
-        working-directory: docs
-        run: docker-compose run build
-
-      - name: Publish
-        working-directory: docs
-        id: publish
-        env:
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-        run: |
-          npm install -g netlify
-          is_master=${{ github.ref_name == 'master' }}
-          is_fork=${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != vars.CURRENT_REPO && 'true' || 'false' }}
-          [[ "$is_master" == "true" && "$is_fork" == "false" ]] && args=" --prod "
-          netlify deploy -d site/ $args | tee build.log
-          url=$(cat build.log | grep -iE  "website(.+)url" | cut -f 2- -d":" | xargs)
-          echo "Url: $url"
-          echo "url=$url" >> $GITHUB_OUTPUT
-
-      - name: Post job result 123
-        uses: Sibz/github-status-action@v1
-        if: always()
-        with:
-          authToken: ${{ secrets.GITHUB_TOKEN }}
-          context: Build docs / docs / netlify preview
-          repository: ${{ vars.CURRENT_REPO }}
-          state: ${{ job.status }}
-          sha: ${{ github.event.pull_request.head.sha || github.sha }}
-          target_url: ${{ steps.publish.outputs.url }}
-
