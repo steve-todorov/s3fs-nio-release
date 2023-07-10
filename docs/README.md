@@ -67,3 +67,4 @@ This directory contains the S3FS NIO2 documentation.
 [mkdocs-pom-parser-plugin]: https://github.com/steve-todorov/mkdocs-pom-parser-plugin "A pom.xml file parser for mkdocs"
 
 [mkdocs-minify-plugin]: https://github.com/byrnereese/mkdocs-minify-plugin
+
