@@ -2,12 +2,17 @@ name: Build docs
 on:
   # Build PRs 
   pull_request_target:
+    types: [ opened, synchronize, reopened ]
     paths:
       - 'docs/**'
       - '.github/workflows/docs.yaml'
 
   # On push event
   push:
+    # Build only changes pushed into the `master` branch -- avoids double builds when you push in a branch which has a PR.
+    branches:
+      - master
+      - pipeline
     paths:
       - 'docs/**'
       - '.github/workflows/docs.yaml'
@@ -59,7 +64,7 @@ jobs:
         with:
           authToken: ${{ secrets.GITHUB_TOKEN }}
           context: Build docs / docs / netlify preview
-          owner: ${{ vars.ORIGIN_OWNER }}
+          repository: ${{ vars.CURRENT_REPOSITORY }}
           state: ${{ job.status }}
           sha: ${{ github.event.pull_request.head.sha || github.sha }}
           target_url: ${{ steps.publish.outputs.url }}
