@@ -62,7 +62,7 @@ jobs:
           echo "Url: $url"
           echo "url=$url" >> $GITHUB_OUTPUT
 
-      - name: Post job result
+      - name: Post job result 123
         uses: Sibz/github-status-action@v1
         if: always()
         with:
