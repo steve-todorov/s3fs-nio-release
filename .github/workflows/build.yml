@@ -17,10 +17,10 @@ on:
 
   # On push event
   push:
-    # Build only changes pushed into the `master` branch.
-    #branches:
-    #  - master
-    #  - pipeline
+    # Build only changes pushed into the `master` branch -- avoids double builds when you push in a branch which has a PR.
+    branches:
+      - master
+      - pipeline
     # Ignore documentation changes (Netlify will handle this)
     paths-ignore:
       - 'docs/**'
