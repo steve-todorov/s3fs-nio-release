@@ -58,7 +58,7 @@ dependencies {
     testImplementation("org.apache.commons:commons-lang3:3.13.0")
     testImplementation("com.github.marschall:zipfilesystem-standalone:1.0.1")
     testImplementation("com.github.marschall:memoryfilesystem:2.6.1")
-    testImplementation("org.mockito:mockito-core:4.11.0")
+    testImplementation("org.mockito:mockito-core:5.5.0")
     testImplementation("org.mockito:mockito-inline:4.11.0")
     testImplementation("org.mockito:mockito-junit-jupiter:4.11.0")
     testImplementation("org.testcontainers:testcontainers:1.18.3")
