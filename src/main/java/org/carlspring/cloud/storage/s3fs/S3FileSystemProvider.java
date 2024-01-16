@@ -176,6 +176,7 @@ public class S3FileSystemProvider
 
     private Cache cache = new Cache();
 
+    private final Object mutex = new Object();
 
     @Override
     public String getScheme()
@@ -187,32 +188,36 @@ public class S3FileSystemProvider
     public FileSystem newFileSystem(URI uri,
                                     Map<String, ?> env)
     {
-        validateUri(uri);
-
-        // get properties for the env or properties or system
-        Properties props = getProperties(uri, env);
-
-        validateProperties(props);
-
-        // try to get the filesystem by the key
-        String key = getFileSystemKey(uri, props);
-        if (fileSystems.containsKey(key))
+        synchronized (mutex)
         {
-            String safeName = uri.getScheme() + "://";
-            String userInfo = uri.getUserInfo();
-            if(userInfo != null) {
-                safeName += uri.getUserInfo().split(":")[0] + ":__REDACTED__@";
+            validateUri(uri);
+
+            // get properties for the env or properties or system
+            Properties props = getProperties(uri, env);
+
+            validateProperties(props);
+
+            // try to get the filesystem by the key
+            String key = getFileSystemKey(uri, props);
+            if (fileSystems.containsKey(key))
+            {
+                String safeName = uri.getScheme() + "://";
+                String userInfo = uri.getUserInfo();
+                if (userInfo != null)
+                {
+                    safeName += uri.getUserInfo().split(":")[0] + ":__REDACTED__@";
+                }
+                safeName += uri.getHost() + (uri.getPort() > -1 ? ":" + uri.getPort() : "") + uri.getPath();
+                throw new FileSystemAlreadyExistsException("File system " + safeName + " already exists");
             }
-            safeName += uri.getHost() + (uri.getPort() > -1 ? ":" + uri.getPort() : "" ) + uri.getPath();
-            throw new FileSystemAlreadyExistsException("File system " + safeName + " already exists");
+
+            // create the filesystem with the final properties, store and return
+            S3FileSystem fileSystem = createFileSystem(uri, props);
+
+            fileSystems.put(fileSystem.getKey(), fileSystem);
+
+            return fileSystem;
         }
-
-        // create the filesystem with the final properties, store and return
-        S3FileSystem fileSystem = createFileSystem(uri, props);
-
-        fileSystems.put(fileSystem.getKey(), fileSystem);
-
-        return fileSystem;
     }
 
     private void validateProperties(Properties props)
@@ -512,7 +517,7 @@ public class S3FileSystemProvider
             @Override
             public Iterator<Path> iterator()
             {
-                return new S3Iterator(s3Path);
+                return new S3FilteredIterator(s3Path, filter);
             }
         };
     }
@@ -524,7 +529,7 @@ public class S3FileSystemProvider
     {
         final S3Path s3Path = toS3Path(path);
         final String key = s3Path.getKey();
-        final String bucketName = s3Path.getFileStore().name();
+        final String bucketName = s3Path.getBucketName();
 
         Preconditions.checkArgument(options.length == 0,
                                     "OpenOptions not yet supported: %s",
@@ -689,7 +694,7 @@ public class S3FileSystemProvider
 
         // create bucket if necessary
         final Bucket bucket = s3Path.getFileStore().getBucket();
-        final String bucketName = s3Path.getFileStore().name();
+        final String bucketName = s3Path.getBucketName();
 
         if (bucket == null)
         {
@@ -717,7 +722,7 @@ public class S3FileSystemProvider
     {
         final S3Path rootPath = toS3Path(path);
         final S3Client client = rootPath.getFileSystem().getClient();
-        final String bucketName = rootPath.getFileStore().name();
+        final String bucketName = rootPath.getBucketName();
 
         LinkedList<Deque<S3Path>> s3Paths = getPathsByBatch(rootPath);
 
@@ -868,9 +873,9 @@ public class S3FileSystemProvider
             throw new FileAlreadyExistsException(format("target already exists: %s", target));
         }
 
-        String bucketNameOrigin = s3Source.getFileStore().name();
+        String bucketNameOrigin = s3Source.getBucketName();
         String keySource = s3Source.getKey();
-        String bucketNameTarget = s3Target.getFileStore().name();
+        String bucketNameTarget = s3Target.getBucketName();
         String keyTarget = s3Target.getKey();
         final S3Client client = s3Source.getFileSystem().getClient();
 
@@ -933,7 +938,7 @@ public class S3FileSystemProvider
     @Override
     public FileStore getFileStore(Path path)
     {
-        throw new UnsupportedOperationException();
+        return toS3Path(path).getFileStore();
     }
 
     @Override
@@ -954,7 +959,7 @@ public class S3FileSystemProvider
         {
             final S3Object s3Object = s3Utils.getS3Object(s3Path);
             final String key = s3Object.key();
-            final String bucket = s3Path.getFileStore().name();
+            final String bucket = s3Path.getBucketName();
             final S3AccessControlList accessControlList = new S3AccessControlList(bucket, key);
 
             accessControlList.checkAccess(modes);

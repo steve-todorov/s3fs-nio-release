@@ -9,7 +9,7 @@ plugins {
     `jacoco-report-aggregation`
     `maven-publish`
     signing
-    id("com.adarshr.test-logger") version "3.2.0"
+    id("com.adarshr.test-logger") version "4.0.0"
     id("org.sonarqube") version "4.0.0.2929"
 }
 
@@ -46,24 +46,23 @@ dependencies {
         exclude("commons-logging", "commons-logging")
     }
     api("software.amazon.awssdk:apache-client")
-    api("com.google.guava:guava:30.1.1-jre")
-    api("org.apache.tika:tika-core:2.8.0") {
+    api("com.google.guava:guava:33.0.0-jre")
+    api("org.apache.tika:tika-core:2.9.1") {
         exclude("org.slf4j", "slf4j-api")
     }
     api("com.google.code.findbugs:jsr305:3.0.2")
 
-    testImplementation("ch.qos.logback:logback-classic:1.3.8")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
-    testImplementation("org.apache.commons:commons-lang3:3.13.0")
+    testImplementation("ch.qos.logback:logback-classic:1.3.14")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.1")
+    testImplementation("org.apache.commons:commons-lang3:3.14.0")
     testImplementation("com.github.marschall:zipfilesystem-standalone:1.0.1")
-    testImplementation("com.github.marschall:memoryfilesystem:2.6.1")
+    testImplementation("com.github.marschall:memoryfilesystem:2.8.0")
     testImplementation("org.mockito:mockito-core:4.11.0")
     testImplementation("org.mockito:mockito-inline:4.11.0")
     testImplementation("org.mockito:mockito-junit-jupiter:4.11.0")
-    testImplementation("org.testcontainers:testcontainers:1.18.3")
-    testImplementation("org.testcontainers:testcontainers:1.18.3")
-    testImplementation("org.assertj:assertj-core:3.24.2")
+    testImplementation("org.testcontainers:testcontainers:1.19.3")
+    testImplementation("org.assertj:assertj-core:3.25.1")
 }
 
 configure<com.adarshr.gradle.testlogger.TestLoggerExtension> {
@@ -110,6 +109,100 @@ sonarqube {
     }
 }
 
+testing {
+    suites {
+        val test by getting(JvmTestSuite::class) {
+            useJUnitJupiter()
+            targets {
+                all {
+                    testTask.configure {
+                        filter {
+                            isFailOnNoMatchingTests = true
+                        }
+                    }
+                }
+            }
+        }
+
+        val testIntegrationSequential by register<JvmTestSuite>("testIntegrationSequential") {
+            dependencies {
+                implementation(project())
+            }
+
+            configurations.getting {
+                extendsFrom(configurations.compileOnly.get())
+                extendsFrom(configurations.runtimeOnly.get())
+                extendsFrom(configurations.implementation.get())
+            }
+
+            // Make sure the test classpath includes the test classpath
+            val srcSet = sourceSets.named(this.name).get()
+            srcSet.compileClasspath += sourceSets.main.get().output + sourceSets.test.get().output + sourceSets.test.get().compileClasspath
+            srcSet.runtimeClasspath += sourceSets.main.get().output + sourceSets.test.get().output + sourceSets.test.get().compileClasspath
+
+            targets {
+                all {
+                    testTask.configure {
+                        filter {
+                            isFailOnNoMatchingTests = true
+                        }
+                        tasks.named("check").get().dependsOn(this)
+                        mustRunAfter(test)
+                    }
+                }
+            }
+        }
+
+        register<JvmTestSuite>("testIntegrationParallel") {
+            dependencies {
+                implementation(project())
+            }
+
+            configurations.getting {
+                extendsFrom(configurations.compileOnly.get())
+                extendsFrom(configurations.runtimeOnly.get())
+                extendsFrom(configurations.implementation.get())
+            }
+
+            // Make sure the test classpath includes the test classpath
+            val srcSet = sourceSets.named(this.name).get()
+            srcSet.compileClasspath += sourceSets.main.get().output + sourceSets.test.get().output + sourceSets.test.get().compileClasspath
+            srcSet.runtimeClasspath += sourceSets.main.get().output + sourceSets.test.get().output + sourceSets.test.get().compileClasspath
+
+            targets {
+                all {
+                    testTask.configure {
+
+                        val cpus = Runtime.getRuntime().availableProcessors();
+                        var forks = cpus
+
+                        if(cpus - 2 > 0) {
+                            forks = cpus - 2
+                        }
+
+                        group = "verification"
+                        description = "Run parallel integration tests using S3"
+
+                        // Creates half as many forks as there are CPU cores.
+                        maxParallelForks = forks
+
+                        systemProperties["junit.jupiter.execution.parallel.enabled"] = true
+                        systemProperties["junit.jupiter.execution.parallel.mode.default"] = "concurrent"
+                        systemProperties["junit.jupiter.execution.parallel.mode.classes.default"] = "concurrent"
+
+                        filter {
+                            isFailOnNoMatchingTests = true
+                        }
+
+                        tasks.named("check").get().dependsOn(this)
+                        mustRunAfter(testIntegrationSequential)
+                    }
+                }
+            }
+        }
+    }
+}
+
 tasks {
 
     withType<JavaCompile>().configureEach {
@@ -121,10 +214,13 @@ tasks {
         options.encoding = "UTF-8"
     }
 
+    withType<Test> {
+        defaultCharacterEncoding = "UTF-8"
+    }
+
     named<Jar>("jar") {
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz").apply { timeZone = TimeZone.getTimeZone("UTC") }
         val attrs = HashMap<String, String?>()
-        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz")
-        sdf.timeZone = TimeZone.getTimeZone("UTC")
         attrs["Build-Date"] = sdf.format(Date())
         attrs["Build-JDK"] = System.getProperty("java.version")
         attrs["Build-Gradle"] = project.gradle.gradleVersion
@@ -132,6 +228,7 @@ tasks {
         attrs["Build-CI"] = System.getProperty("CI", "false")
         attrs["Version"] = version.toString()
         manifest.attributes(attrs)
+        exclude("**/*.RSA", "**/*.SF", "**/*.DSA", "**/amazon-*.properties")
     }
 
     named<Task>("build") {
@@ -160,61 +257,6 @@ tasks {
 
     named<Task>("sonarqube") {
         group = "sonar"
-    }
-
-    named<Test>("test") {
-        description = "Run unit tests"
-        useJUnitPlatform {
-            filter {
-                excludeTestsMatching("*IT")
-            }
-        }
-    }
-
-    withType<Test> {
-        defaultCharacterEncoding = "UTF-8"
-    }
-
-    create<Test>("it-s3") {
-        group = "verification"
-        description = "Run integration tests using S3"
-        useJUnitPlatform {
-            filter {
-                includeTestsMatching("*IT")
-                includeTags("it-s3")
-            }
-        }
-        mustRunAfter(named("test"))
-    }
-
-    // TODO: There are some problems with using minio that overcomplicate the setup.
-    //       For the time being we'll be disabling it until we figure out the best path forward.
-//    create<Test>("it-minio") {
-//        group = "verification"
-//        description = "Run integration tests using Minio"
-//        useJUnitPlatform {
-//            filter {
-//                includeTestsMatching("*IT")
-//                includeTags("it-minio")
-//            }
-//        }
-//    }
-
-    named<Task>("check") {
-        dependsOn(named("it-s3"))
-    }
-
-    named<Jar>("jar") {
-        val attrs = HashMap<String, String?>()
-        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss zzz")
-        sdf.timeZone = TimeZone.getTimeZone("UTC")
-        attrs["Build-Date"] = sdf.format(Date())
-        attrs["Build-JDK"] = System.getProperty("java.version")
-        attrs["Build-Gradle"] = project.gradle.gradleVersion
-        attrs["Build-OS"] = System.getProperty("os.name")
-        attrs["Build-Automatic"] = System.getProperty("CI", "false")
-        manifest.attributes(attrs)
-        exclude("**/*.RSA", "**/*.SF", "**/*.DSA", "**/amazon-*.properties")
     }
 
     withType<Sign> {

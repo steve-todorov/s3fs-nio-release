@@ -21,6 +21,7 @@ on:
     branches:
       - master
       - pipeline
+      - issues/parallel-integration-test-execution
     # Ignore documentation changes (Netlify will handle this)
     paths-ignore:
       - 'docs/**'
@@ -39,7 +40,7 @@ on:
 # Currently you cannot use ${{ env.IS_FORK }} for some reason, which is why you might need to copy-paste some of these.
 env:
   REPOSITORY: ${{ github.repository }}
-  IS_FORK: ${{ github.event.pull_request.head.repo.full_name != vars.CURRENT_REPO || github.repository != vars.CURRENT_REPO }}
+  IS_FORK: ${{ github.event.pull_request.head.repo.fork == true }}
   IS_PR: ${{ github.event_name == 'pull_request' }}
   EVENT_NAME: ${{ toJSON(github.event_name) }}
   # format: username:branch
@@ -48,13 +49,13 @@ env:
 
 jobs:
   build-and-test:
-    environment: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != vars.CURRENT_REPO && 'external-collaborators' || '' }}
+    environment: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.fork == true && 'external-collaborators' || '' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
-        java: [ 8, 11 ]
+        java: [ 11, 17 ]
         #os: [ ubuntu-latest ]
         #java: [ 11 ]
     steps:
@@ -133,11 +134,8 @@ jobs:
         run: ./gradlew build jacocoTestReport -PwithSignature=${{ fromJSON(steps.deploy_check.outputs.result).is_deployable }} --warn --stacktrace
 
       - name: Publish code analysis to Sonarcloud
-        # [WARNING] The version of Java 1.8 you have used to run this analysis is deprecated and we will stop accepting
-        #           it from October 2020. Please update to at least Java 11.
-        # [WARNING] No analysis for external contributors - sorry.
-        #           Check https://github.com/carlspring/s3fs-nio/pull/77#issuecomment-686804207
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.java == '11' }}
+        # [WARNING] The version of Java (11.0.21) you have used to run this analysis is deprecated and we will stop accepting it soon. Please update to at least Java 17.
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.java == '17' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           S3FS_PUBLISH_SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
